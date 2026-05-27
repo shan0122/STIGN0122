@@ -1,0 +1,98 @@
+"""
+STGIN 默认超参数 (论文 Section 4.2 给出的实现细节)
+"""
+
+class Config:
+    # ----- 数据集 -----
+    dataset_name = 'TBD'              # 'TBD' / 'MSVD' / 'MSR-VTT'
+    annotation_file = 'data/tbd_annotations.json'
+    feature_dir     = 'data/features/tbd'
+    video_dir       = 'data/videos/tbd'
+
+    # 数据划分
+    num_train_videos = 1200
+    num_val_videos   = 400
+    num_test_videos  = 400
+
+    # ----- 视频采样 -----
+    num_frames = 26                   # "26 frames are selected at uniform intervals"
+    frame_size = 224
+    clip_len_3d = 16                  # "we take 16-frame clips as input"
+    clip_size_3d = 112
+
+    # ----- 目标检测 -----
+    max_boxes = 5                     # "the number of bounding boxes N is limited to 5"
+    conf_threshold = 0.5              # "confidence scores below 0.5 are filtered out"
+
+    # ----- 特征维度 -----
+    obj_feat_dim = 2048               # ResNet-101 layer4 通道数
+    appear_dim   = 2048               # 2D CNN (ResNet-101)
+    motion_dim   = 4096               # 3D CNN (C3D fc6)
+    visual_out_dim = 1024             # "for all graph operations, the feature size is set to 1024"
+    concept_embed_dim = 512           # 词嵌入维度 (同下)
+
+    # ----- 词表/文本 -----
+    word_embed_dim   = 512            # "each word is one-hot encoded and embedded into a 512-dimensional space"
+    max_caption_len  = 26             # "annotations longer than 26 words are trimmed"
+    min_word_freq    = 2              # "words that appear at least twice"
+    vocab_size       = 4000           # TBD: ~3998
+
+    # ----- SCD -----
+    # MSVD=300, MSR-VTT=400, TBD=300
+    num_concepts = 300
+
+    # ----- Transformer Decoder -----
+    d_model     = 512
+    num_layers  = 6                   # "we set the number of layers in the decoder to 6"
+    num_heads   = 10                  # "the number of heads is set to 10"
+    d_ff        = 2048
+    dropout     = 0.1
+
+    # ----- TSI (GCN) -----
+    num_gcn_layers = 2
+    dist_threshold = 0.5              # 论文中位置阈值 μ (bbox 归一化后)
+
+    # ----- 损失函数 -----
+    beta_loss     = 0.4               # 论文实验最优值
+    lambda_scd    = 1.0               # SCD loss 权重
+
+    # ----- 训练 -----
+    batch_size    = 64                # "the batch size is configured at 64"
+    learning_rate = 1e-6              # "the learning rate is fixed at 1×10^-6"
+    optimizer     = 'adam'            # "optimized using the Adam algorithm"
+    weight_decay  = 0.0
+    num_epochs    = 100
+    grad_clip     = 5.0
+    log_interval  = 20
+    save_interval = 5
+
+    # ----- 推理 -----
+    beam_size     = 6                 # "the beam size k is set to 6"
+    decode_mode   = 'beam'
+
+    # ----- I/O -----
+    save_dir   = 'checkpoints'
+    log_dir    = 'logs'
+    device     = 'cuda'
+    num_workers = 4
+    seed = 42
+
+    # ----- 评估 -----
+    best_metric = 'BLEU_4'            # "best checkpoint is selected based on the Bleu_4 score"
+
+
+# 不同数据集的特定配置
+DATASET_CONFIGS = {
+    'TBD':     {'num_concepts': 300, 'max_caption_len': 26},
+    'MSVD':    {'num_concepts': 300, 'max_caption_len': 20},
+    'MSR-VTT': {'num_concepts': 400, 'max_caption_len': 20},
+}
+
+
+def get_config(dataset_name: str = 'TBD') -> Config:
+    cfg = Config()
+    cfg.dataset_name = dataset_name
+    if dataset_name in DATASET_CONFIGS:
+        for k, v in DATASET_CONFIGS[dataset_name].items():
+            setattr(cfg, k, v)
+    return cfg
